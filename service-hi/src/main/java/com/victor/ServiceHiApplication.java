@@ -1,6 +1,7 @@
 package com.victor;
 
 import com.victor.service.HiService;
+import com.victor.service.RabbitmqService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -20,6 +21,9 @@ public class ServiceHiApplication {
 	@Autowired
 	private HiService hiService;
 
+	@Autowired
+	private RabbitmqService rabbitmqService;
+
 	public static void main(String[] args) {
 		SpringApplication.run(ServiceHiApplication.class, args);
 	}
@@ -29,4 +33,5 @@ public class ServiceHiApplication {
 	public String sayHi(){
 		return hiService.sayHi();
 	}
+
 }
