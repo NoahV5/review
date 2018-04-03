@@ -8,8 +8,8 @@ spring:
   application:
     name: service-hi
   rabbitmq:
-    addresses: 119.29.84.121:15672
     password: rabbitmq
     username: rabbitmq
     publisher-confirms: true #消息才会回调
     virtual-host: /
+    host: 119.29.84.121

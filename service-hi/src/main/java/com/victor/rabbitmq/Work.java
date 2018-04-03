@@ -12,7 +12,7 @@ import com.rabbitmq.client.QueueingConsumer;
 public class Work {
 
     //队列的名称
-    private final static String QUEUE_NAME = "WORKQUEUE";
+    private final static String QUEUE_NAME = "WORKQUEUE_TEST";
     public static void main(String[] args) throws Exception{
         //区分不同工作进程的输出
         int hashCode = Work.class.hashCode();
@@ -24,7 +24,10 @@ public class Work {
         Connection connection = factory.newConnection();
         //声明队列
         Channel channel = connection.createChannel();
-        channel.queueDeclare(QUEUE_NAME,false,false,false,null);
+        channel.queueDeclare(QUEUE_NAME,true,false,false,null);
+        //设置最大服务转发消息数量
+        int prefetchCount = 1;
+        channel.basicQos(1);
         QueueingConsumer consumer = new QueueingConsumer(channel);
         boolean ask = false;//打开应答机制
         //指定消费队列
