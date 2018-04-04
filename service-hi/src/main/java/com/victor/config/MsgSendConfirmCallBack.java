@@ -5,13 +5,12 @@ import org.springframework.amqp.rabbit.support.CorrelationData;
 
 /**
  * @author Victor
- * @date 2018/04/03
- * 添加消息发送到交换机确认机制
+ * @date 2018/04/04
  */
-public class MsgSendConfirmCallBack implements RabbitTemplate.ConfirmCallback{
+public class MsgSendConfirmCallBack implements RabbitTemplate.ConfirmCallback {
+
     @Override
     public void confirm(CorrelationData correlationData, boolean ack, String cause) {
-
         System.out.println(" 回调id:" + correlationData);
         if (ack) {
             System.out.println("消息成功消费");

@@ -2,7 +2,6 @@ package com.victor;
 
 import com.victor.config.AmqpConfig;
 import com.victor.service.HiService;
-import com.victor.service.RabbitmqService;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.support.CorrelationData;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,7 +27,7 @@ public class ServiceHiApplication {
 	private HiService hiService;
 
 	@Autowired
-	private RabbitmqService rabbitmqService;
+	private RabbitTemplate rabbitTemplate;
 
 	public static void main(String[] args) {
 		SpringApplication.run(ServiceHiApplication.class, args);
@@ -40,15 +39,13 @@ public class ServiceHiApplication {
 		return hiService.sayHi();
 	}
 
-	@Autowired
-	private RabbitTemplate rabbitTemplate;
 
 	@RequestMapping("/send")
 	public String send3() throws UnsupportedEncodingException {
 		String uuid = UUID.randomUUID().toString();
 		CorrelationData correlationId = new CorrelationData(uuid);
-		rabbitTemplate.convertAndSend(AmqpConfig.EXANAGE_NAME, AmqpConfig.ROUTE_KEY2, "哈哈", correlationId);
+
+		rabbitTemplate.convertAndSend(AmqpConfig.EXCHANGE, AmqpConfig.ROUTINGKEY2, "哈哈", correlationId);
 		return uuid;
 	}
-
 }

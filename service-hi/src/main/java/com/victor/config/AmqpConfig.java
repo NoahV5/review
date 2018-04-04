@@ -2,7 +2,6 @@ package com.victor.config;
 
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
-import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.beans.factory.annotation.Value;
@@ -25,47 +24,53 @@ public class AmqpConfig {
     @Value("${spring.rabbitmq.virtual-host}")
     public String virtualHost;
 
-    public final static String EXANAGE_NAME = "EXANGE_TEST";
-    public final static String ROUTE_KEY1 = "ROUTE_KEY_1";
-    public final static String ROUTE_KEY2 = "ROUTE_KEY_2";
+    /** 消息交换机的名字*/
+    public static final String EXCHANGE = "exchangeTest";
+    /** 队列key1*/
+    public static final String ROUTINGKEY1 = "queue_one_key1";
+    /** 队列key2*/
+    public static final String ROUTINGKEY2 = "queue_one_key2";
 
-
-
+    /**
+     创建连接工厂
+     * @date:2017/8/31
+     * @className:ConnectionFactory
+     * @author:Administrator
+     * @description:
+     */
     @Bean
-    public ConnectionFactory createConnection(){
-        CachingConnectionFactory factory = new CachingConnectionFactory();
-        factory.setHost(host);
-        factory.setPassword(password);
-        factory.setUsername(username);
-        factory.setVirtualHost(virtualHost);
-        factory.setPublisherConfirms(true);//必须设置,消息才能回调
-        return factory;
+    public CachingConnectionFactory connectionFactory() {
+        CachingConnectionFactory connectionFactory = new CachingConnectionFactory(this.host);
+        connectionFactory.setUsername(this.username);
+        connectionFactory.setPassword(this.password);
+        connectionFactory.setVirtualHost(this.virtualHost);
+        connectionFactory.setPublisherConfirms(true);
+        return connectionFactory;
     }
 
     /**
-     * 1,定义direct exchange,绑定queueTest
-     * 2,durable = "true",rabbitmq重启的时候不需要创建新的转发器
-     * 3,direct转发器相对来说比较简单,匹配规则为,如果路由键匹配,消息就会投送到相对较的队列
-     *   fanout转发器中没有路由键的说法,他会把消息发送到绑定的在该转发器上面的队列中
-     *   topic转发器采用模糊匹配路由器的原则进行转发消息
-     *   key:queue在该direct-exchange中的key值,当消息发送给direct-exchange中指定key设置值时,消息会转发给queue参数指定
+     1.定义direct exchange，绑定queueTest
+     2.durable="true" rabbitmq重启的时候不需要创建新的交换机
+     3.direct交换器相对来说比较简单，匹配规则为：如果路由键匹配，消息就被投送到相关的队列
+     fanout交换器中没有路由键的概念，他会把消息发送到所有绑定在此交换器上面的队列中。
+     topic交换器你采用模糊匹配路由键的原则进行转发消息到队列中
+     key: queue在该direct-exchange中的key值，当消息发送给direct-exchange中指定key为设置值时，消息将会转发给queue参数指定
+     * @date:2017/9/1
+     * @className:ConnectionFactory
+     * @author:Administrator
+     * @description:
      */
-
     @Bean
-    public DirectExchange getDirectChange(){
-
-        DirectExchange exchange = new DirectExchange(AmqpConfig.EXANAGE_NAME,true,false);
-        return exchange;
-
+    public DirectExchange directExchange(){
+        DirectExchange directExchange = new DirectExchange(AmqpConfig.EXCHANGE,true,false);
+        return directExchange;
     }
 
-    /**
-     * 定义queue_one
-     *
-     */
 
+
+    //--------------------定义queue_one------------------------------------------------
     @Bean
-    public Queue createQueue(){
+    public Queue queue_one(){
         /**
          *   durable="true" 持久化 rabbitmq重启的时候不需要创建新的队列
          auto-delete 表示消息队列没有在使用时将被自动删除 默认是false
@@ -75,21 +80,22 @@ public class AmqpConfig {
     }
 
     /**
-     * 讲队列绑定咋转发器上
+     将消息队列1和交换机进行绑定
+     * @date:2017/9/1
+     * @className:ConnectionFactoryConfigure
+     * @author:Administrator
+     * @description:
      */
-
     @Bean
-    public Binding binding(){
-        return BindingBuilder.bind(createQueue()).to(getDirectChange()).with(AmqpConfig.ROUTE_KEY1);
+    public Binding binding_one() {
+        return BindingBuilder.bind(queue_one()).to(directExchange()).with(AmqpConfig.ROUTINGKEY1);
     }
 
-    /**
-     * 定义queue_two
-     *
-     */
+    //--------------------定义queue_one------------------------------------------------
 
+    //--------------------定义queue_two------------------------------------------------
     @Bean
-    public Queue createQueueTwo(){
+    public Queue queue_two(){
         /**
          *   durable="true" 持久化 rabbitmq重启的时候不需要创建新的队列
          auto-delete 表示消息队列没有在使用时将被自动删除 默认是false
@@ -99,41 +105,91 @@ public class AmqpConfig {
     }
 
     /**
-     * 讲队列绑定咋转发器上
+     将消息队列2和交换机进行绑定
+     * @date:2017/9/1
+     * @className:ConnectionFactoryConfigure
+     * @author:Administrator
+     * @description:
      */
-
     @Bean
-    public Binding bindingQueueTwo(){
-        return BindingBuilder.bind(createQueue()).to(getDirectChange()).with(AmqpConfig.ROUTE_KEY2);
+    public Binding binding_two() {
+        return BindingBuilder.bind(queue_two()).to(directExchange()).with(AmqpConfig.ROUTINGKEY2);
+    }
+
+    //--------------------定义queue_two------------------------------------------------
+
+
+    /**
+     queue litener  观察 监听模式 当有消息到达时会通知监听在对应的队列上的监听对象
+     * @date:2017/9/1
+     * @className:ConnectionFactory
+     * @author:Administrator
+     * @description:
+     */
+    @Bean
+    public SimpleMessageListenerContainer simpleMessageListenerContainerOne(){
+        SimpleMessageListenerContainer simpleMessageListenerContainer = new SimpleMessageListenerContainer(connectionFactory());
+        simpleMessageListenerContainer.addQueues(queue_one());
+        simpleMessageListenerContainer.setExposeListenerChannel(true);
+        simpleMessageListenerContainer.setMaxConcurrentConsumers(1);
+        simpleMessageListenerContainer.setConcurrentConsumers(1);
+        simpleMessageListenerContainer.setAcknowledgeMode(AcknowledgeMode.MANUAL); //设置确认模式手工确认
+        simpleMessageListenerContainer.setMessageListener(messageConsumer());
+        return simpleMessageListenerContainer;
     }
 
     /**
-     * queue listener 观察 监听模式,当有消息到达时会监听所在队列的监听对象
+     定义消费者
+     * @date:2017/9/1
+     * @className:ConnectionFactory
+     * @author:Administrator
+     * @description:
      */
     @Bean
-    public SimpleMessageListenerContainer createListener(){
-        SimpleMessageListenerContainer listenerContainer = new SimpleMessageListenerContainer(this.createConnection());
-        listenerContainer.addQueues(createQueueTwo());
-        listenerContainer.setExposeListenerChannel(true);
-        listenerContainer.setMaxConcurrentConsumers(1);
-        listenerContainer.setConcurrentConsumers(1);
-        listenerContainer.setAcknowledgeMode(AcknowledgeMode.MANUAL);//设置确认模式手动确认
-        listenerContainer.setMessageListener(messageConsumer());
-        return listenerContainer;
+    public MessageConsumer messageConsumer(){
+        return new MessageConsumer();
     }
 
     /**
-     * 定义消费者
-     * @return
+     queue litener  观察 监听模式 当有消息到达时会通知监听在对应的队列上的监听对象
+     * @date:2017/9/1
+     * @className:ConnectionFactory
+     * @author:Administrator
+     * @description:
      */
     @Bean
-    public Object messageConsumer() {
+    public SimpleMessageListenerContainer simpleMessageListenerContainer_two(){
+        SimpleMessageListenerContainer simpleMessageListenerContainer = new SimpleMessageListenerContainer(connectionFactory());
+        simpleMessageListenerContainer.addQueues(queue_two());
+        simpleMessageListenerContainer.setExposeListenerChannel(true);
+        simpleMessageListenerContainer.setMaxConcurrentConsumers(1);
+        simpleMessageListenerContainer.setConcurrentConsumers(1);
+        simpleMessageListenerContainer.setAcknowledgeMode(AcknowledgeMode.MANUAL); //设置确认模式手工确认手动模式，消费者客户端显示编码确认消息消费完成，Broker给生产者发送回调，消息删除
+        simpleMessageListenerContainer.setMessageListener(messageConsumer2());
+        return simpleMessageListenerContainer;
+    }
+
+    /**
+     定义消费者
+     * @date:2017/9/1
+     * @className:ConnectionFactory
+     * @author:Administrator
+     * @description:
+     */
+    @Bean
+    public MessageConsumer2 messageConsumer2(){
         return new MessageConsumer2();
     }
 
+    /**
+     定义rabbit template用于数据的接收和发送
+     * @date:2017/8/31
+     * @className:ConnectionFactory
+     * @author:Administrator
+     * @description:*/
     @Bean
-    public RabbitTemplate createRabbitTemplate(){
-        RabbitTemplate template = new RabbitTemplate(createConnection());
+    public RabbitTemplate rabbitTemplate() {
+        RabbitTemplate template = new RabbitTemplate(connectionFactory());
         /**若使用confirm-callback或return-callback，必须要配置publisherConfirms或publisherReturns为true
          * 每个rabbitTemplate只能有一个confirm-callback和return-callback*/
 
@@ -145,6 +201,7 @@ public class AmqpConfig {
         //  template.setMandatory(true);
         return template;
     }
+
     /**
      消息确认机制
      Confirms给客户端一种轻量级的方式，能够跟踪哪些消息被broker处理，哪些可能因为broker宕掉或者网络失败的情况而重新发布。

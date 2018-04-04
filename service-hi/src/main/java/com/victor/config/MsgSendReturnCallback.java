@@ -5,9 +5,9 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
 /**
  * @author Victor
- * @date 2018/04/03
+ * @date 2018/04/04
  */
-public class MsgSendReturnCallback implements RabbitTemplate.ReturnCallback {
+public class MsgSendReturnCallback implements RabbitTemplate.ReturnCallback  {
 
     @Override
     public void returnedMessage(Message message, int replyCode, String replyText, String exchange, String routingKey) {
